@@ -3,10 +3,9 @@
 
 ## Author
 author:
-  name: Демидова Екатерина Алексеевна
+  name: Артамонов Тимофей Евгеньевич
   degrees: BSc
-  orcid: 0009-0005-2255-4025
-  email: 1032259377@pfur.ru
+  email: 1032259339@pfur.ru
   affiliation:
     - name: Российский университет дружбы народов
       country: Российская Федерация
@@ -15,7 +14,7 @@ author:
       address: ул. Миклухо-Маклая, д. 6
 ## Title
 title: "Лабораторная работы №1"
-subtitle: "Шифра простой заменя"
+subtitle: "Шифры простой замены"
 license: "CC BY"
 date: 2025-09-04
 ## Generic options
@@ -30,6 +29,7 @@ format:
   beamer:
     toc: false
     toc-title: Содержание
+    pdf-engine: lualatex
     number-sections: true
     colorlinks: false
     toc-depth: 2
@@ -58,10 +58,10 @@ format:
 :::::::::::::: {.columns align=center}
 ::: {.column width="70%"}
 
-  * Демидова Екатерина Алексеевна
-  * студентка группы НФИмд-01-25
+  * Артамонов Тимофей Евгеньевич
+  * студент группы НПМмд-01-25
   * Российский университет дружбы народов
-  * <https://github.com/eademidova>
+  * <https://github.com/teartamonov>
 
 :::
 ::: {.column width="30%"}
@@ -73,106 +73,37 @@ format:
 
 # Введение
 
-**Цель работы**
+## Цель работы
 
-Основная цель работы -- изучить и реализовать шифры Цезаря и Атбаш.
+Цель работы - реализовать шифры простой замены Цезаря и Атбаша на языке Julia.
 
-**Задачи**
+## Задание
 
-С помощью языка программирования Julia реализовать:
+* Реализовать шифр Цезаря с произвольным ключом k
+* Реализовать шифр Атбаша
 
-- шифр Цезаря,
-- шифр Атбаш.
 
-# Шифр Цезаря
+## Теоретическое введение
 
-```julia
-function caesar_cipher(text::String, k::Int)
-    russianAlphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
-    ciphered_text = []
-    
-    for symbol in text
-        lower_char = lowercase(string(symbol))[1]
-        if occursin(string(lower_char), russianAlphabet)
-            alphabet_chars = collect(russianAlphabet)
-            index = findfirst(isequal(lower_char), alphabet_chars)
-            new_index = mod(index + k - 1, 33) + 1
-```
+В основе функционирования шифров простой замены лежит следующий принцип: для получения шифртекста отдельные символы или группы символов исходного алфавита заменяются символами или группами символов шифроалфавита.
 
-# Шифр Цезаря
+# Выполнение
 
-```julia
-            
-            if isuppercase(symbol)
-                push!(ciphered_text, uppercase(alphabet_chars[new_index]))
-            else
-                push!(ciphered_text, alphabet_chars[new_index])
-            end
-        else
-            push!(ciphered_text, symbol)
-        end
-    end
-    
-    return join(ciphered_text)
-end
-```
+## Реализация шифров простой замены Цезаря и Атбаша на языке Julia ([рис. @fig-001]).
 
-# Шифр Атбаш
+![Код функций на Julia и вывод для теста](image/1.PNG){#fig-001 width=60%}
 
-```julia
-function atbash_cipher(text::String)
-    a = Int('а')
-    ya = Int('я')
-    ciphered_text = []
-    
-    for symbol in text
-        ascii_symbol = Int(lowercase(symbol)[1])
-        if a <= ascii_symbol <= ya
-            new_letter = Char(ya - ascii_symbol + a)
-```
+# Результат работы программы ([рис. @fig-002]).
 
-# Шифр Атбаш
 
-```julia
-            if isuppercase(symbol)
-                push!(ciphered_text, uppercase(new_letter))
-            else
-                push!(ciphered_text, new_letter)
-            end
-        else
-            push!(ciphered_text, symbol)
-        end
-    end
-    
-    return join(ciphered_text)
-end
-```
-
-# Тестирование
-
-```julia
-function main()
-    text = "Привет, мир!"
-    k = 3
-    ciphered_text_caesar = caesar_cipher(text, k)
-    println("Шифр Цезаря (k=$k): $ciphered_text_caesar")
-    ciphered_text_atbash = atbash_cipher(text)
-    println("Шифр Атбаш: $ciphered_text_atbash")
-end
-```
-
-# Результат
-
-![Результат работы программы](image/res.png){#fig-001 width=70%}
+![Вывод в консоли](image/2.PNG){#fig-002 width=70%}
 
 # Выводы
 
-С помощью языка программирования Julia были реализованы:
-
-- шифр Цезаря,
-- шифр Атбаш.
+* Реализовали шифр Цезаря с произвольным ключом k
+* Реализовали шифр Атбаша
 
 # Список литературы
 
-1. JuliaLang [Электронный ресурс]. 2024 JuliaLang.org contributors. URL: https: //julialang.org/ (дата обращения: 11.10.2024).
-2. Julia 1.11 Documentation [Электронный ресурс]. 2024 JuliaLang.org contributors. URL: https://docs.julialang.org/en/v1/ (дата обращения: 11.10.2024).
+1. JuliaLang [Электронный ресурс]. 2024 JuliaLang.org contributors. URL: https: //julialang.org/
+2. Julia 1.11 Documentation [Электронный ресурс]. 2024 JuliaLang.org contributors. URL: https://docs.julialang.org/en/v1/
