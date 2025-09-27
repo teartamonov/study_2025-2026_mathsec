@@ -1,0 +1,175 @@
+---
+# Preamble
+
+## Author
+author:
+  name: Демидова Екатерина Алексеевна
+  degrees: BSc
+  orcid: 0009-0005-2255-4025
+  email: 1032259377@pfur.ru
+  affiliation:
+    - name: Российский университет дружбы народов
+      country: Российская Федерация
+      postal-code: 117198
+      city: Москва
+      address: ул. Миклухо-Маклая, д. 6
+## Title
+title: "Лабораторная работы №1"
+subtitle: "Шифра простой заменя"
+license: "CC BY"
+## Generic options
+lang: ru-RU
+number-sections: true
+toc: true
+toc-title: "Содержание"
+toc-depth: 2
+## Crossref customization
+crossref:
+  lof-title: "Список иллюстраций"
+  lot-title: "Список таблиц"
+  lol-title: "Листинги"
+## Bibliography
+bibliography:
+  - bib/cite.bib
+csl: _resources/csl/gost-r-7-0-5-2008-numeric.csl
+## Formats
+format:
+### Pdf output format
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: false
+    toc-depth: 2
+    lof: true # List of figures
+    lot: true # List of tables
+#### Document
+    documentclass: scrreprt
+    papersize: a4
+    fontsize: 12pt
+    linestretch: 1.5
+#### Language
+    babel-lang: russian
+    babel-otherlangs: english
+#### Biblatex
+    cite-method: biblatex
+    biblio-style: gost-numeric
+    biblatexoptions:
+      - backend=biber
+      - langhook=extras
+      - autolang=other*
+#### Misc options
+    csquotes: true
+    indent: true
+    header-includes: |
+      \usepackage{indentfirst}
+      \usepackage{float}
+      \floatplacement{figure}{H}
+      \usepackage[RM={Scale=0.94},SS={Scale=0.94},SScon={Scale=0.94},TT={Scale=MatchLowercase,FakeStretch=0.9},DefaultFeatures={Ligatures=Common}]{plex-otf}
+### Docx output format
+  docx:
+    toc: true
+    number-sections: true
+    toc-depth: 2
+---
+
+# Цель работы
+
+Цель работы -- изучить и реализовать шифры Цезаря и Атбаш.
+
+# Задание
+
+С помощью языка программирования Julia реализовать:
+
+- шифр Цезаря,
+- шифр Атбаш.
+
+# Теоретическое введение
+
+Julia — высокоуровневый свободный язык программирования с динамической типизацией, созданный для математических вычислений[@julialang]. Эффективен также и для написания программ общего назначения. Синтаксис языка схож с синтаксисом других математических языков, однако имеет некоторые существенные отличия.
+
+Для выполнения заданий была использована официальная документация Julia[@juliadoc].
+
+# Выполнение лабораторной работы
+
+Шифр Цезаря — один из древнейших и простейших шифров. Его суть в том, что каждая буква исходного текста заменяется на букву, сдвинутую на фиксированное число позиций в алфавите. Например, при сдвиге на 3 буква A становится D, B — E и так далее. Такой сдвиг одинаков для всего текста
+
+
+```julia
+function caesar_cipher(text::String, k::Int)
+    russianAlphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+    ciphered_text = []
+    
+    for symbol in text
+        lower_char = lowercase(string(symbol))[1]
+        if occursin(string(lower_char), russianAlphabet)
+            alphabet_chars = collect(russianAlphabet)
+            index = findfirst(isequal(lower_char), alphabet_chars)
+            new_index = mod(index + k - 1, 33) + 1
+            
+            if isuppercase(symbol)
+                push!(ciphered_text, uppercase(alphabet_chars[new_index]))
+            else
+                push!(ciphered_text, alphabet_chars[new_index])
+            end
+        else
+            push!(ciphered_text, symbol)
+        end
+    end
+    
+    return join(ciphered_text)
+end
+```
+
+Шифр Атбаш — это частный случай аффинного шифра, где буквы алфавита заменяются на "зеркальные" буквы: первая буква заменяется на последнюю, вторая — на предпоследнюю и так далее. Для латинского алфавита это выглядит как замена A на Z, B на Y, C на X и т.д.
+
+```julia
+function atbash_cipher(text::String)
+    a = Int('а')
+    ya = Int('я')
+    ciphered_text = []
+    
+    for symbol in text
+        ascii_symbol = Int(lowercase(symbol)[1])
+        if a <= ascii_symbol <= ya
+            new_letter = Char(ya - ascii_symbol + a)
+            if isuppercase(symbol)
+                push!(ciphered_text, uppercase(new_letter))
+            else
+                push!(ciphered_text, new_letter)
+            end
+        else
+            push!(ciphered_text, symbol)
+        end
+    end
+    
+    return join(ciphered_text)
+end
+```
+
+Для тестирования используем функцию main():
+```julia
+function main()
+    text = "Привет, мир!"
+    k = 3
+    ciphered_text_caesar = caesar_cipher(text, k)
+    println("Шифр Цезаря (k=$k): $ciphered_text_caesar")
+    ciphered_text_atbash = atbash_cipher(text)
+    println("Шифр Атбаш: $ciphered_text_atbash")
+end
+```
+
+В результате получим следующие шифротексты([рис. @fig-001]).
+
+![Результат работы программы](image/res.png){#fig-001 width=70%}
+
+# Выводы
+
+С помощью языка программирования Julia были реализованы:
+
+- шифр Цезаря,
+- шифр Атбаш.
+
+# Список литературы{.unnumbered}
+
+::: {#refs}
+:::

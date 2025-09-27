@@ -1,0 +1,178 @@
+---
+# Preamble
+
+## Author
+author:
+  name: Демидова Екатерина Алексеевна
+  degrees: BSc
+  orcid: 0009-0005-2255-4025
+  email: 1032259377@pfur.ru
+  affiliation:
+    - name: Российский университет дружбы народов
+      country: Российская Федерация
+      postal-code: 117198
+      city: Москва
+      address: ул. Миклухо-Маклая, д. 6
+## Title
+title: "Лабораторная работы №1"
+subtitle: "Шифра простой заменя"
+license: "CC BY"
+date: 2025-09-04
+## Generic options
+lang: ru-RU
+crossref:
+  lof-title: Список иллюстраций
+  lot-title: Список таблиц
+  lol-title: Листинги
+## Formats
+format:
+### Pdf output format
+  beamer:
+    toc: false
+    toc-title: Содержание
+    number-sections: true
+    colorlinks: false
+    toc-depth: 2
+    slide_level: 2
+    aspectratio: 169
+    section-titles: true
+    theme: metropolis
+    themeoptions: progressbar=frametitle,sectionpage=progressbar,numbering=fraction
+#### Language
+    babel-lang: russian
+    babel-otherlangs: english
+### Html output
+  revealjs:
+    transition: slide
+    margin: 0.2
+    smaller: false
+    output-ext: html
+    theme: beige
+    logo: _resources/image/logo_rudn.png
+---
+
+# Информация
+
+## Докладчик
+
+:::::::::::::: {.columns align=center}
+::: {.column width="70%"}
+
+  * Демидова Екатерина Алексеевна
+  * студентка группы НФИмд-01-25
+  * Российский университет дружбы народов
+  * <https://github.com/eademidova>
+
+:::
+::: {.column width="30%"}
+
+![](./image/ava.jpg)
+
+:::
+::::::::::::::
+
+# Введение
+
+**Цель работы**
+
+Основная цель работы -- изучить и реализовать шифры Цезаря и Атбаш.
+
+**Задачи**
+
+С помощью языка программирования Julia реализовать:
+
+- шифр Цезаря,
+- шифр Атбаш.
+
+# Шифр Цезаря
+
+```julia
+function caesar_cipher(text::String, k::Int)
+    russianAlphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+    ciphered_text = []
+    
+    for symbol in text
+        lower_char = lowercase(string(symbol))[1]
+        if occursin(string(lower_char), russianAlphabet)
+            alphabet_chars = collect(russianAlphabet)
+            index = findfirst(isequal(lower_char), alphabet_chars)
+            new_index = mod(index + k - 1, 33) + 1
+```
+
+# Шифр Цезаря
+
+```julia
+            
+            if isuppercase(symbol)
+                push!(ciphered_text, uppercase(alphabet_chars[new_index]))
+            else
+                push!(ciphered_text, alphabet_chars[new_index])
+            end
+        else
+            push!(ciphered_text, symbol)
+        end
+    end
+    
+    return join(ciphered_text)
+end
+```
+
+# Шифр Атбаш
+
+```julia
+function atbash_cipher(text::String)
+    a = Int('а')
+    ya = Int('я')
+    ciphered_text = []
+    
+    for symbol in text
+        ascii_symbol = Int(lowercase(symbol)[1])
+        if a <= ascii_symbol <= ya
+            new_letter = Char(ya - ascii_symbol + a)
+```
+
+# Шифр Атбаш
+
+```julia
+            if isuppercase(symbol)
+                push!(ciphered_text, uppercase(new_letter))
+            else
+                push!(ciphered_text, new_letter)
+            end
+        else
+            push!(ciphered_text, symbol)
+        end
+    end
+    
+    return join(ciphered_text)
+end
+```
+
+# Тестирование
+
+```julia
+function main()
+    text = "Привет, мир!"
+    k = 3
+    ciphered_text_caesar = caesar_cipher(text, k)
+    println("Шифр Цезаря (k=$k): $ciphered_text_caesar")
+    ciphered_text_atbash = atbash_cipher(text)
+    println("Шифр Атбаш: $ciphered_text_atbash")
+end
+```
+
+# Результат
+
+![Результат работы программы](image/res.png){#fig-001 width=70%}
+
+# Выводы
+
+С помощью языка программирования Julia были реализованы:
+
+- шифр Цезаря,
+- шифр Атбаш.
+
+# Список литературы
+
+1. JuliaLang [Электронный ресурс]. 2024 JuliaLang.org contributors. URL: https: //julialang.org/ (дата обращения: 11.10.2024).
+2. Julia 1.11 Documentation [Электронный ресурс]. 2024 JuliaLang.org contributors. URL: https://docs.julialang.org/en/v1/ (дата обращения: 11.10.2024).
