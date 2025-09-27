@@ -3,10 +3,9 @@
 
 ## Author
 author:
-  name: Демидова Екатерина Алексеевна
+  name: Артамонов Тимофей Евгеньевич
   degrees: BSc
-  orcid: 0009-0005-2255-4025
-  email: 1032259377@pfur.ru
+  email: 1032259339@pfur.ru
   affiliation:
     - name: Российский университет дружбы народов
       country: Российская Федерация
@@ -14,7 +13,7 @@ author:
       city: Москва
       address: ул. Миклухо-Маклая, д. 6
 ## Title
-title: "Лабораторная работа №2"
+title: "Лабораторная работы №2"
 subtitle: "Шифры перестановки"
 license: "CC BY"
 ## Generic options
@@ -41,7 +40,7 @@ format:
     colorlinks: false
     toc-depth: 2
     lof: true # List of figures
-    lot: false # List of tables
+    lot: true # List of tables
 #### Document
     documentclass: scrreprt
     papersize: a4
@@ -74,233 +73,161 @@ format:
 
 # Цель работы
 
-Цель работы -- изучить и реализовать шифры перестановки.
+Цель работы - реализовать шифры перестановки указанные в лабораторной работе на языке Julia.
 
 # Задание
 
-С помощью языка программирования Julia реализовать:
+* Реализовать шифрование с помощью решеток
+* Реализовать шифрование таблицей Виженера
+* Реализовать маршрутное шифрование
 
-- маршрутное шифрование,
-- шифрование с помощью решеток,
-- шифрование с помощью таблицы Виженера.
 
 # Теоретическое введение
 
-Julia — высокоуровневый свободный язык программирования с динамической типизацией, созданный для математических вычислений[@julialang]. Эффективен также и для написания программ общего назначения. Синтаксис языка схож с синтаксисом других математических языков, однако имеет некоторые существенные отличия.
+Шифры перестановки преобразуют открытый текст в криптограмму путем перестановки его символов. Способ, каким при шифровании переставляются буквы открытого текста, и является ключом шифра. Важным требованием является равенство длин ключа и исходного текста. 
 
-Для выполнения заданий была использована официальная документация Julia[@juliadoc].
 
-# Выполнение лабораторной работы
+# Выполнение
 
-Маршрутное шифрование — метод, при котором символы исходного текста записываются в таблицу (матрицу) по определённому маршруту (например, змейкой, по спирали или зигзагом), а затем считываются по другому маршруту для получения зашифрованного текста. Такой способ меняет порядок символов, усложняя восстановление исходного сообщения без знания маршрутов.
+Шифрование маршрутное ([рис. @fig-001]).
 
+![Код на Julia](image/1.PNG){#fig-001 width=70%}
 
 ```julia
-function route_cipher(text, password)
-    words = split(text)
-    letters = collect(join(words))
-    len_password = length(password)
-    order = sort(collect(enumerate(collect(password))), by=x -> x[2])
-    
-    while length(letters) % len_password != 0
-        push!(letters, rand('а':'я'))
+function route(text, password)
+    encrypted_text = ""
+    text = replace(lowercase(text), " " => "")
+    n = length(password)
+    if length(text) % n != 0
+        text *= 'a'^(n - length(text) % n)
     end
-    
-    num_rows = length(letters) ÷ len_password
-    route_table = reshape(letters, (len_password, num_rows))
-    
-    ciphered_text = join([join(route_table[ind[1], :]) for ind in order])
-    return ciphered_text
+    m = length(text) ÷ n
+    col_order = sortperm(collect(password))
+    chars = collect(text)
+    matrix = [chars[(i-1)*n + j] for i in 1:m, j in 1:n]
+
+    for col in col_order
+        for i in 1:m
+            encrypted_text *= matrix[i, col]
+        end
+    end
+    return uppercase(encrypted_text)
 end
 ```
 
-Шифрование с помощью решеток — классический метод, где на листе бумаги с вырезанными отверстиями (решёткой) пишут часть текста, затем решётку сдвигают или поворачивают, и пишут следующую часть. После заполнения всех отверстий получается зашифрованное сообщение, которое без решётки расшифровать сложно.
+Шифрование с помощью решеток ([рис. @fig-002]).
+
+![Код на Julia](image/2.PNG){#fig-002 width=70%}
 
 ```julia
-
 function rot90(matrix, k=1)
     for _ in 1:k
-        matrix = reverse(matrix, dims=2)
-        matrix = permutedims(matrix, (2, 1))
+
+        matrix = permutedims(reverse(matrix, dims=1))
     end
     return matrix
 end
 
-function grid_cipher(text, password=nothing)
-    # Очищаем текст
-    text = lowercase(filter(c -> isletter(c), text))
-    letters = collect(text)
+function generate_mesh(k)
+    base = reshape(1:k^2, k, k)
+    rot_90 = rot90(base, 1)
+    rot_180 = rot90(base, 2)
+    rot_270 = rot90(base, 3)
+
+    top = hcat(base, rot_90)
+    bottom = hcat(rot_270, rot_180)
+    return vcat(top, bottom)
+end
+
+function mesh_encrypt(text, password, k)
+    encrypted_text = ""
+    text = replace(lowercase(text), " " => "")
+    password = lowercase(password)
     
-    # Определяем размер решётки
-    n = ceil(Int, sqrt(length(letters)))
-    if n % 2 != 0
-        n += 1
+    if length(password) != k^2
+        println("ОШИБКА! НЕВЕРНЫЕ РАЗМЕРНОСТИ")
+        return
     end
     
-    # Дополняем текст случайными буквами
-    while length(letters) < n * n
-        push!(letters, rand('а':'я'))
+    target = 4*k^2
+    
+    chars = collect(text)
+    
+    if length(chars) < target
+
+        append!(chars, fill('а', target - length(chars)))
+    elseif length(chars) > target
+        chars = chars[1:target]
     end
-    
-    k = n ÷ 2
-    
-    # Создаём базовый квадрат
-    square_base = reshape(1:k^2, (k, k))
-    
-    # Создаём повёрнутые квадраты
-    square1 = copy(square_base)
-    square2 = rot90(square_base)
-    square3 = rot90(square_base, 2)
-    square4 = rot90(square_base, 3)
-    
-    # Собираем полную решётку
-    top = vcat(square1, square2)
-    bottom = vcat(square4, square3)
-    grid = hcat(top, bottom)
-    
-    # Создаём маску прорезей
-    mask = ones(Int, size(grid))
-    
-    # Циклически создаём прорези
-    for number in 1:k^2+1
-        quadrant_order = (number - 1) % 4
-        
-        if quadrant_order == 0
-            quadrant = grid[1:k, 1:k]
-            indices = findall(x -> x == number, quadrant)
-            if !isempty(indices)
-                i, j = indices[1].I
-                mask[i, j] = 0
-            end
-            
-        elseif quadrant_order == 1
-            quadrant = grid[1:k, k+1:end]
-            indices = findall(x -> x == number, quadrant)
-            if !isempty(indices)
-                i, j = indices[1].I
-                mask[i, j + k] = 0
-            end
-            
-        elseif quadrant_order == 2
-            quadrant = grid[k+1:end, k+1:end]
-            indices = findall(x -> x == number, quadrant)
-            if !isempty(indices)
-                i, j = indices[1].I
-                mask[i + k, j + k] = 0
-            end
-            
-        elseif quadrant_order == 3
-            quadrant = grid[k+1:end, 1:k]
-            indices = findall(x -> x == number, quadrant)
-            if !isempty(indices)
-                i, j = indices[1].I
-                mask[i + k, j] = 0
+
+    mesh = generate_mesh(k)
+    matrix = Matrix{Char}(undef, 2*k, 2*k)
+
+    pos = 1
+    for rot in 0:3
+        cur_mesh = rot90(mesh, rot)
+        for i in 1:2*k, j in 1:2*k
+            if cur_mesh[i, j] <= k^2 && pos <= length(chars)
+                matrix[i,j] = chars[pos]
+                pos += 1
             end
         end
     end
-    
-    # Создаём матрицу для шифротекста
-    matrix = fill(' ', n, n)
-    text_index = 1
-    
-    # Записываем текст через решётку с поворотами
-    for rotation in 0:3
-        # Поворачиваем маску
-        rotated_mask = rot90(mask, rotation)
-        
-        # Записываем символы в позиции прорезей
-        for i in 1:n
-            for j in 1:n
-                if rotated_mask[i, j] == 0 && text_index <= length(letters)
-                    matrix[i, j] = letters[text_index]
-                    text_index += 1
-                end
-            end
+
+    order = sortperm(collect(password))
+    for col in order
+        for i in 1:2*k
+            encrypted_text *= matrix[i, col]
         end
     end
-    
-    order = sort(collect(enumerate(collect(password))), by=x -> x[2])
-    
-    # Формируем зашифрованный текст из строк матрицы в отсортированном порядке
-    ciphered_text = [join(matrix[ind[1], :]) for ind in order]
-    
-    return join(ciphered_text)
+    return uppercase(encrypted_text)
 end
 ```
 
-Шифрование с помощью таблицы Виженера — это метод полиалфавитного шифрования, основанный на использовании ключевого слова. Для каждой буквы открытого текста выбирается сдвиг по алфавиту, зависящий от соответствующей буквы ключа. В итоге получается последовательность шифров Цезаря с разными сдвигами, что значительно повышает стойкость шифра по сравнению с простым сдвигом.
+Шифрование с помощью таблицы Виженера ([рис. @fig-003]).
+
+![Код на Julia](image/3.PNG){#fig-003 width=70%}
 
 ```julia
-function vizhener_cipher(text, password)
-    russianAlphabet = collect("абвгдежзийклмнопрстуфхцчшщьыэюя")
+
+function vigener(text, password)
+    alphabet=collect("абвгдежзийклмнопрстуфхцчшщыьэюя")
+    text = replace(lowercase(text), " " => "")
+    password = collect(lowercase(password))
     
-    # Создаём таблицу Виженера
-    table = Matrix{Char}(undef, length(russianAlphabet), length(russianAlphabet))
-    for i in 1:length(russianAlphabet)
-        for j in 1:length(russianAlphabet)
-            idx = (i + j - 2) % length(russianAlphabet) + 1
-            table[i, j] = russianAlphabet[idx]
+    repeated = ""
+    for i in 1:length(text)
+        repeated *= password[mod1(i, length(password))]
+    end
+    text = collect(text)
+    repeated = collect(repeated)
+    encrypted_text = ""
+    for i in 1:length(text)
+        text_i = findfirst(isequal(text[i]), alphabet)
+        pass_i = findfirst(isequal(repeated[i]), alphabet)
+        if text_i != nothing && pass_i != nothing
+            new_i = mod1(text_i + pass_i - 1, length(alphabet))
+            encrypted_text *= alphabet[new_i]
+        else
+            println("ОШИБКА! СИМВОЛА ", text[i], " или ", repeated[i], " НЕТ В АЛФАВИТЕ")
+            return
         end
     end
-    
-    # Получаем сдвиги для пароля
-    shift = [findfirst(==(letter), russianAlphabet) for letter in collect(password)]
-    
-    # Очищаем текст
-    text = lowercase(filter(c -> isletter(c) && c ∈ 'а':'я', text))
-    ciphered_text = Char[]
-    count = 1
-    
-    for letter in text
-        ind1 = findfirst(==(letter), russianAlphabet)
-        ind2 = shift[(count - 1) % length(shift) + 1]
-        count += 1
-        push!(ciphered_text, table[ind1, ind2])
-    end
-    
-    return join(ciphered_text)
+    return uppercase(encrypted_text)
 end
 ```
 
-Для тестирования используем функцию main():
-```julia
-function main()
-    println("Route cipher:")
-    text = "нельзя недооценивать противника"
-    password = "пароль"
-    ciphered_text = route_cipher(text, password)
-    println("Original: ", text)
-    println("Encrypted: ", ciphered_text)
-    println()
+# Результат
 
-    println("Grid cipher:")
-    text = "договор подписали"
-    password = "шифр"
-    ciphered_text = grid_cipher(text, password)
-    println("Original: ", text)
-    println("Encrypted: ", ciphered_text)
-    println()
+Тест с теми же словами, что в лабораторной работе ([рис. @fig-004]).
 
-    println("Vizhener cipher:")
-    text = "криптография серьезная наука"
-    password = "математика"
-    ciphered_text = vizhener_cipher(text, password)
-    println("Original: ", text)
-    println("Encrypted: ", ciphered_text)
-end
-```
-
-В результате получим следующие шифротексты([рис. @fig-001]).
-
-![Результат работы программы](image/res.png){#fig-001 width=70%}
+![Вывод запрограммированных шифров](image/4.PNG){#fig-004 width=70%}
 
 # Выводы
 
-С помощью языка программирования Julia были реализованы:
-
-- маршрутное шифрование,
-- шифрование с помощью решеток,
-- шифрование с помощью таблицы Виженера.
+* Реализовали шифрование с помощью решеток
+* Реализовали шифрование таблицей Виженера
+* Реализовали маршрутное шифрование
 
 # Список литературы{.unnumbered}
 
