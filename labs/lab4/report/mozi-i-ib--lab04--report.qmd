@@ -1,0 +1,219 @@
+---
+# Preamble
+
+## Author
+author:
+  name: Артамонов Тимофей Евгеньевич
+  degrees: BSc
+  email: 1032259339@pfur.ru
+  affiliation:
+    - name: Российский университет дружбы народов
+      country: Российская Федерация
+      postal-code: 117198
+      city: Москва
+      address: ул. Миклухо-Маклая, д. 6
+## Title
+title: "Лабораторная работы №4"
+subtitle: "Шифрование гаммированием"
+license: "CC BY"
+## Generic options
+lang: ru-RU
+number-sections: true
+toc: true
+toc-title: "Содержание"
+toc-depth: 2
+## Crossref customization
+crossref:
+  lof-title: "Список иллюстраций"
+  lot-title: "Список таблиц"
+  lol-title: "Листинги"
+## Bibliography
+bibliography:
+  - bib/cite.bib
+csl: _resources/csl/gost-r-7-0-5-2008-numeric.csl
+## Formats
+format:
+### Pdf output format
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: false
+    toc-depth: 2
+    lof: true # List of figures
+    lot: true # List of tables
+#### Document
+    documentclass: scrreprt
+    papersize: a4
+    fontsize: 12pt
+    linestretch: 1.5
+#### Language
+    babel-lang: russian
+    babel-otherlangs: english
+#### Biblatex
+    cite-method: biblatex
+    biblio-style: gost-numeric
+    biblatexoptions:
+      - backend=biber
+      - langhook=extras
+      - autolang=other*
+#### Misc options
+    csquotes: true
+    indent: true
+    header-includes: |
+      \usepackage{indentfirst}
+      \usepackage{float}
+      \floatplacement{figure}{H}
+      \usepackage[RM={Scale=0.94},SS={Scale=0.94},SScon={Scale=0.94},TT={Scale=MatchLowercase,FakeStretch=0.9},DefaultFeatures={Ligatures=Common}]{plex-otf}
+      \usepackage{amsmath}
+### Docx output format
+  docx:
+    toc: true
+    number-sections: true
+    toc-depth: 2
+---
+
+# Цель работы
+
+Цель работы - реализовать алгоритм шифрования гаммированием с конечной гаммой на языке Julia.
+
+# Задание
+
+* Изучить теоретические основы шифрования гаммированием
+* Реализовать функции преобразования текста в числовые коды и обратно
+* Реализовать алгоритм расширения гаммы
+* Реализовать функции шифрования и дешифрования
+* Протестировать работу алгоритма на примере из лабораторной работы
+
+# Теоретическое введение
+
+Шифрование гаммированием - это метод шифрования, при котором исходный текст объединяется с псевдослучайной последовательностью (гаммой) с помощью операции сложения по модулю. Основное преимущество этого метода заключается в возможности использования короткого ключа для шифрования длинных сообщений.
+
+В лабораторной работе используется конечная гамма, которая повторяется до длины шифруемого текста. Шифрование выполняется по формуле:
+
+$c_i = (p_i + g_i - 1) \bmod N + 1$
+
+где \(p_i\) - i-й символ исходного текста, \(g_i\) - i-й символ гаммы, \(N\) - размер алфавита.
+
+Дешифрование выполняется по обратной формуле:
+
+$p_i = (c_i - g_i - 1 + N) \bmod N + 1$
+
+# Выполнение
+
+## Функции преобразования текста ([рис. @fig-001]).
+
+![Функции преобразования текста в числовые коды и обратно](image/1.PNG){#fig-001 width=90%}
+
+```julia
+function text_to_numbers(text, alphabet)
+    numbers = Int[]
+    for char in lowercase(text)
+        idx = findfirst(isequal(char), alphabet)
+        if idx !== nothing
+            push!(numbers, idx)
+        end
+    end
+    return numbers
+end
+
+function numbers_to_text(numbers, alphabet)
+    text = ""
+    for num in numbers
+        if 1 <= num <= length(alphabet)  
+            text *= alphabet[num]
+        end
+    end
+    return text
+end
+```
+
+## Функция расширения гаммы ([рис. @fig-002]).
+
+![Функция расширения гаммы](image/2.PNG){#fig-002 width=90%}
+
+```julia
+function extend_gamma(gamma_numbers, len)  
+    extended_gamma = Int[]
+    for i in 1:len
+        push!(extended_gamma, gamma_numbers[(i-1) % length(gamma_numbers) + 1])
+    end
+    return extended_gamma 
+end
+```
+
+## Функции шифрования и дешифрования ([рис. @fig-003]).
+
+![Функции шифрования и дешифрования](image/3.PNG){#fig-003 width=90%}
+
+```julia
+function encrypt_gamma(text, gamma, alphabet)
+    text_numbers = text_to_numbers(text, alphabet)
+    gamma_numbers = text_to_numbers(gamma, alphabet)
+    extended_gamma = extend_gamma(gamma_numbers, length(text_numbers))
+    encrypted_numbers = Int[]
+    for i in 1:length(text_numbers)
+        c = (text_numbers[i] + extended_gamma[i] - 1) % length(alphabet) + 1
+        push!(encrypted_numbers, c)
+    end
+    return numbers_to_text(encrypted_numbers, alphabet) 
+end
+
+function decrypt_gamma(encrypted_text, gamma, alphabet)
+    encrypted_numbers = text_to_numbers(encrypted_text, alphabet)
+    gamma_numbers = text_to_numbers(gamma, alphabet)
+    extended_gamma = extend_gamma(gamma_numbers, length(encrypted_numbers))  
+    decrypted_numbers = Int[]
+    for i in 1:length(encrypted_numbers)
+        p = (encrypted_numbers[i] - extended_gamma[i] - 1 + length(alphabet)) % length(alphabet) + 1  
+        push!(decrypted_numbers, p)  
+    end
+    return numbers_to_text(decrypted_numbers, alphabet) 
+end
+```
+
+## Тестирование алгоритма ([рис. @fig-004]).
+
+![Пример использования алгоритма](image/4.PNG){#fig-004 width=90%}
+
+```julia
+russian_alphabet = ['а','б','в','г','д','е','ж','з','и','й','к','л','м','н','о',
+                   'п','р','с','т','у','ф','х','ц','ч','ш','щ','ъ','ы','ь','э','ю','я']
+
+# Тестирование
+orig = "ПРИКАЗ"
+gamma = "ГАММА"
+println("Исходный текст: ", orig)
+println("Гамма: ", gamma)
+
+encrypted_text = encrypt_gamma(orig, gamma, russian_alphabet)
+println("Зашифрованный текст: ", encrypted_text)
+```
+
+# Результат
+
+Программа успешно шифрует слово "ПРИКАЗ" с гаммой "ГАММА" и получает зашифрованный текст "УСХЧБЛ", что соответствует примеру из лабораторной работы. Также программа корректно выполняет дешифрование, возвращая исходный текст.
+
+Результаты тестирования показывают, что:
+- Алгоритм правильно выполняет преобразование текста в числовые коды и обратно
+- Функция расширения гаммы корректно повторяет гамму до длины текста
+- Шифрование и дешифрование работают согласно заданным формулам
+- Результаты совпадают с ожидаемыми значениями из лабораторной работы
+
+# Выводы
+
+В ходе выполнения лабораторной работы:
+
+* Изучили теоретические основы шифрования гаммированием
+* Реализовали функции преобразования текста в числовые коды и обратно
+* Реализовали алгоритм расширения гаммы
+* Реализовали функции шифрования и дешифрования
+* Протестировали работу алгоритма на примере из лабораторной работы
+
+Алгоритм успешно выполняет шифрование и дешифрование текста с использованием конечной гаммы. Результаты работы программы соответствуют ожидаемым результатам из лабораторной работы, что подтверждает корректность реализации.
+
+Шифрование гаммированием является эффективным методом криптографической защиты информации, особенно при использовании достаточно длинных и случайных гамм. Реализованный алгоритм демонстрирует основные принципы этого метода и может быть использован как основа для более сложных криптографических систем.
+
+# Список литературы{.unnumbered}
+
+::: {#refs}
+:::
